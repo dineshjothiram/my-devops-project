@@ -8,44 +8,35 @@ jobs:
   deploy-staging:
     runs-on: ubuntu-latest
     steps:
-
-      # 1️⃣ Checkout repo
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2️⃣ Set up Docker
       - name: Set up Docker
         uses: docker/setup-buildx-action@v2
 
-      # 3️⃣ Log in to Docker Hub
-      - name: Docker login
+      - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 4️⃣ Build and push Docker image
-      - name: Build & push Docker image
+      - name: Build & Push Docker Image
         run: |
           docker build -t dineshjothiram/myapp:latest .
           docker push dineshjothiram/myapp:latest
 
-      # 5️⃣ Set up kind (Kubernetes in Docker)
       - name: Set up kind
-        uses: engineerd/setup-kind@v0.9.0
+        uses: engineerd/setup-kind@v0.6.2
 
-      # 6️⃣ Create kind cluster
       - name: Create kind cluster
         run: |
           kind create cluster --name staging
           export KUBECONFIG="$(kind get kubeconfig-path --name="staging")"
 
-      # 7️⃣ Create staging namespace
       - name: Create staging namespace
         run: kubectl create namespace staging || true
 
-      # 8️⃣ Deploy manifests
-      - name: Deploy manifests to kind cluster
+      - name: Deploy to kind Staging
         run: |
           kubectl apply -f k8s/configmap.yaml -n staging
           kubectl apply -f k8s/secret.yaml -n staging
@@ -54,6 +45,5 @@ jobs:
           kubectl apply -f k8s/ingress.yaml -n staging
           kubectl rollout status deployment/myapp -n staging
 
-      # 9️⃣ Verify Pods
-      - name: Get pods in staging
+      - name: Get Pods
         run: kubectl get pods -n staging
